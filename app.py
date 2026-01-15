@@ -7,7 +7,7 @@ from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassific
 app = FastAPI(title="Fake News Detection API")
 
 # Load tokenizer & model
-MODEL_PATH = "fake_news_distilbert_modelep1"
+MODEL_PATH = "fake_news_distilbert_model"
 
 tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_PATH)
 model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
