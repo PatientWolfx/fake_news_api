@@ -1,14 +1,14 @@
 import torch
-from fastapi import FastAPI
+from fastapi import FastAPI, Request 
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 
 # Initialize app
 app = FastAPI(title="Fake News Detection API")
 
-@app.get("/")
-def home():
-    return {"message": "Fake News Detection API is running"}
+templates = Jinja2Templates(directory="templates")
 
 # Load tokenizer & model
 MODEL_PATH = "fake_news_distilbert_model"
@@ -17,6 +17,11 @@ tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_PATH)
 model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
 
+# UI route
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+    
 # Request schema
 class NewsRequest(BaseModel):
     text: str
