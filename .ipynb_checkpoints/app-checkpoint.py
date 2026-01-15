@@ -6,10 +6,6 @@ from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassific
 # Initialize app
 app = FastAPI(title="Fake News Detection API")
 
-@app.get("/")
-def home():
-    return {"message": "Fake News Detection API is running"}
-
 # Load tokenizer & model
 MODEL_PATH = "fake_news_distilbert_model"
 
