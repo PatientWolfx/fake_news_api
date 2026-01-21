@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fake News Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            width: 420px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1e40af;
+        }
+
+        .result {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>📰 Fake News Detection</h2>
+    <p>Enter a news headline or article:</p>
+
+    <textarea id="newsText"></textarea>
+
+    <button onclick="predict()">Check News</button>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+    async function predict() {
+        const text = document.getElementById("newsText").value;
+        const resultDiv = document.getElementById("result");
+
+        if (!text.trim()) {
+            resultDiv.innerHTML = "⚠️ Please enter text.";
+            return;
+        }
+
+        resultDiv.innerHTML = "⏳ Analyzing...";
+
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ text: text })
+        });
+
+        const data = await response.json();
+
+        resultDiv.innerHTML = `
+            ✅ Prediction: <b>${data.prediction}</b><br>
+            📊 Confidence: ${data.confidence}
+        `;
+    }
+</script>
+
+</body>
+</html>

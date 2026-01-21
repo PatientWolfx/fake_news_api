@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fake News Detection</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f8fafc;
+            color: #1f2933;
+        }
+
+        header {
+            background: #1e40af;
+            color: white;
+            padding: 20px 40px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        main {
+            padding: 40px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 6px;
+            font-size: 18px;
+        }
+
+        .real {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .fake {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background: #e5e7eb;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    Fake News Detection System
+</header>
+
+<main>
+    <h2>Fake News Detector</h2>
+    <p>Paste a news headline or article below and click <b>Analyze</b>.</p>
+
+    <textarea id="newsText" placeholder="Enter news content here..."></textarea>
+
+    <br>
+    <button onclick="predict()">Analyze</button>
+
+    <div id="result" class="result"></div>
+</main>
+
+<footer>
+    Fake News Detection | DistilBERT + FastAPI
+</footer>
+
+<script>
+    async function predict() {
+        const text = document.getElementById("newsText").value;
+        const resultDiv = document.getElementById("result");
+
+        if (!text.trim()) {
+            resultDiv.innerHTML = "⚠️ Please enter some text.";
+            return;
+        }
+
+        resultDiv.className = "result";
+        resultDiv.innerHTML = "⏳ Analyzing...";
+
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
+
+        const data = await response.json();
+
+        if (data.prediction === "REAL") {
+            resultDiv.classList.add("real");
+        } else {
+            resultDiv.classList.add("fake");
+        }
+
+        resultDiv.innerHTML = `
+            <strong>Prediction:</strong> ${data.prediction}<br>
+            <strong>Confidence:</strong> ${data.confidence}
+        `;
+    }
+</script>
+
+</body>
+</html>
