@@ -1,34 +1,57 @@
 import torch
-from fastapi import FastAPI, Request 
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 
-# Initialize app
+# -----------------------------
+# App initialization
+# -----------------------------
 app = FastAPI(title="Fake News Detection API")
-
 templates = Jinja2Templates(directory="templates")
 
-# Load tokenizer & model
-MODEL_PATH = "fake_news_distilbert_model"
+# -----------------------------
+# Model loading
+# -----------------------------
+MODEL_PATH = "model"
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_PATH)
 model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
+model.to(device)
 model.eval()
 
-# UI route
+# -----------------------------
+# UI Route (HTML)
+# -----------------------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-    
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
+
+# -----------------------------
 # Request schema
+# -----------------------------
 class NewsRequest(BaseModel):
     text: str
 
+# -----------------------------
 # Prediction endpoint
+# -----------------------------
 @app.post("/predict")
-def predict_news(news: NewsRequest):
+def predict_news(news: NewsRequest, threshold: float = 0.9):
+    """
+    Predict REAL or FAKE using confidence thresholding.
+    Label mapping:
+        0 -> FAKE
+        1 -> REAL
+    """
+
+    # Tokenize
     inputs = tokenizer(
         news.text,
         return_tensors="pt",
@@ -37,29 +60,26 @@ def predict_news(news: NewsRequest):
         max_length=256
     )
 
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
+    # Inference
     with torch.no_grad():
         outputs = model(**inputs)
 
-    # Softmax over logits
-    probs = torch.softmax(outputs.logits, dim=1).squeeze(0)
+    probs = torch.softmax(outputs.logits, dim=1)[0]
 
-    # IMPORTANT: label mapping
-    # 0 -> FAKE
-    # 1 -> REAL
     prob_fake = probs[0].item()
     prob_real = probs[1].item()
 
-    # High-confidence decision
+    # Decision logic
     if prob_fake >= threshold:
         label = "FAKE"
         confidence = prob_fake
-
     elif prob_real >= threshold:
         label = "REAL"
         confidence = prob_real
-
     else:
-        # Forced fallback (still ONLY 2 labels)
+        # Forced fallback
         if prob_real >= prob_fake:
             label = "REAL"
             confidence = prob_real
@@ -69,5 +89,7 @@ def predict_news(news: NewsRequest):
 
     return {
         "prediction": label,
-        "confidence": round(confidence, 4)
+        "confidence": round(confidence, 4),
+        "prob_fake": round(prob_fake, 4),
+        "prob_real": round(prob_real, 4)
     }
